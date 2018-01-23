@@ -13,7 +13,7 @@ python run.py --envs 32 --map MoveToBeacon
 
 
 ## Result:
-** MoveToBeacon **
+**MoveToBeacon**
 
 ![MoveToBeaconChart](imgs/result_MoveToBeacon.png)
 
