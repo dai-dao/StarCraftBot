@@ -13,8 +13,6 @@ python run.py --envs 32 --map MoveToBeacon
 
 
 ## Result:
-**MoveToBeacon**
-
 MoveToBeacon           |  CollectMineralShards
 :-------------------------:|:-------------------------:
 ![](imgs/result_MoveToBeacon.png)  |  ![](imgs/result_CollectMineralShards.png)
