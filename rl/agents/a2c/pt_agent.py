@@ -84,7 +84,14 @@ class A2CAgent(object):
     def _sample_actions(self, available_actions, policy):
         fn_pi, arg_pis = policy
         fn_pi = self._mask_unavailable_actions(available_actions, fn_pi)  
-        fn_samples = self._sample(fn_pi).data.cpu().numpy()
+        
+        # Sample actions
+        # Avoid the case where the sampled action is NOT available
+        while True:
+            fn_samples = self._sample(fn_pi)
+            if (available_actions.gather(1, fn_samples.unsqueeze(1)) == 1).all():
+                fn_samples = fn_samples.data.cpu().numpy()
+                break
 
         arg_samples = dict()
         for arg_type, arg_pi in arg_pis.items():
