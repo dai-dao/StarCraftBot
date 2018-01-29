@@ -5,7 +5,9 @@ from torch.autograd import Variable
 import torch.functional as F
 from torch.distributions import Categorical
 
+import os
 import numpy as np 
+
 from rl.networks.pt_fully_conv import FullyConv
 from rl.pre_processing import Preprocessor
 
@@ -61,6 +63,28 @@ class A2CAgent(object):
     def log(self, logger, i):
         # self.network.log_params(logger, i)
         self.network.log_grads(logger, i)
+
+
+    def save_checkpoint(self, epoch_count):
+        print('Saving checkpoint at', self.args.save_dir + '.pth.tar')
+        out = {}
+        params = self.network.get_trainable_params(with_id=True)
+        for k, v in params.items():
+            out[k] = v.state_dict()
+        out['epoch']  = epoch_count
+        out['optimizer'] = self.optimizer.state_dict()
+        torch.save(out, self.args.save_dir + '.pth.tar')
+
+
+    def load_checkpoint(self):
+        print('Loading checkpoint at', self.args.save_dir + '.pth.tar')
+        loaded_params = torch.load(self.args.save_dir + '.pth.tar')
+        params = self.network.get_trainable_params(with_id=True)
+        for k, v in params.items():
+            v.load_state_dict(loaded_params[k])
+        self.optimizer.load_state_dict(loaded_params['optimizer'])
+        current_epoch_count = loaded_params['epoch']
+        return current_epoch_count
 
 
     def _make_var(self, input_dict):

@@ -108,24 +108,38 @@ class FullyConv(object):
             v.cuda()
 
 
-    def get_trainable_params(self):
+    def get_trainable_params(self, with_id=False):
         params = []
+        ids = {}
         for k, v in self.embed_screen.items():
+            ids['embed_screen:' + str(k)] = v
             params.extend(list(v.parameters()))
         for k, v in self.embed_minimap.items():
+            ids['embed_minimap:' + str(k)] = v
             params.extend(list(v.parameters()))
         for k, v in self.embed_flat.items():
+            ids['embed_flat:' + str(k)] = v
             params.extend(list(v.parameters()))
+        ids['screen_out:0'] = self.screen_out
         params.extend(list(self.screen_out.parameters()))
+        ids['minimap_out:0'] = self.minimap_out
         params.extend(list(self.minimap_out.parameters()))
+        ids['fc:0'] = self.fc
         params.extend(list(self.fc.parameters()))
+        ids['value:0'] = self.value
         params.extend(list(self.value.parameters()))
+        ids['fn_out:0'] = self.fn_out
         params.extend(list(self.fn_out.parameters()))
         for k, v in self.non_spatial_outputs.items():
+            ids['non_spatial_outputs:' + str(k)] = v
             params.extend(list(v.parameters()))
         for k, v in self.spatial_outputs.items():
+            ids['spatial_outputs:' + str(k)] = v
             params.extend(list(v.parameters()))
-        return params
+        if not with_id: 
+            return params
+        else:
+            return ids
 
 
     def log_grads(self, logger, i):

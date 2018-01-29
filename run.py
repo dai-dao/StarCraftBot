@@ -21,11 +21,11 @@ FLAGS(['run.py'])
 
 
 parser = argparse.ArgumentParser(description='Starcraft 2 deep RL agents')
-parser.add_argument('--experiment_id', type=str, default='my_experiment', 
+parser.add_argument('--experiment_id', type=str, required=True, 
                     help='identifier to store experiment results')
 parser.add_argument('--eval', action='store_true',
                     help='if false, episode scores are evaluated')
-parser.add_argument('--ow', action='store_true',
+parser.add_argument('--overwrite', action='store_true', default=False,
                     help='overwrite existing experiments (if --train=True)')
 parser.add_argument('--map', type=str, default='MoveToBeacon',
                     help='name of SC2 map')
@@ -51,7 +51,7 @@ parser.add_argument('--gpu', type=str, default='0',
                     help='gpu device id')
 parser.add_argument('--summary_iters', type=int, default=1,
                     help='record summary after this many iterations')
-parser.add_argument('--save_iters', type=int, default=5000,
+parser.add_argument('--save_iters', type=int, default=500,
                     help='store checkpoint after this many iterations')
 parser.add_argument('--max_to_keep', type=int, default=5,
                     help='maximum number of checkpoints to keep before discarding older ones')
@@ -77,19 +77,11 @@ ckpt_path = os.path.join(args.save_dir, args.experiment_id)
 summary_type = 'train' if args.train else 'eval'
 summary_path = os.path.join(args.summary_dir, args.experiment_id, summary_type)
 
-
-def _save_if_training(agent, summary_writer):
-  if args.train:
-    agent.save(ckpt_path)
-    summary_writer.flush()
-    sys.stdout.flush()
+args.save_dir = ckpt_path
+args.summary_dir = summary_path
 
 
 def main():
-    if args.train and args.ow:
-      shutil.rmtree(ckpt_path, ignore_errors=True)
-      shutil.rmtree(summary_path, ignore_errors=True)
-    
     size_px = (args.res, args.res)
     env_args = dict(
         map_name=args.map,
@@ -106,19 +98,15 @@ def main():
     num_no_vis = args.envs - num_vis
     if num_no_vis > 0:
       env_fns.extend([partial(make_sc2env, **env_args)] * num_no_vis)
-
-    
     envs = SubprocVecEnv(env_fns)
     agent = A2CAgent(args)
-    summary_writer = Logger('./log/torch_tb/')
-    
-    '''
-    if os.path.exists(ckpt_path):
-      agent.load(ckpt_path)
-    else:
-      agent.init()
-    '''
 
+    current_epoch = 0
+    if os.path.isfile(args.save_dir + '.pth.tar') and not args.overwrite:
+      current_epoch = agent.load_checkpoint()
+      print("Restored from last checkpoint at epoch", current_epoch)
+
+    summary_writer = Logger(args.summary_dir)
     runner = A2CRunner(
         envs=envs,
         agent=agent,
@@ -128,23 +116,18 @@ def main():
         n_steps=args.steps_per_batch)
 
     runner.reset()
-
-    i = 0
     try:
       while True:
-        # if i > 0 and i % args.save_iters == 0:
-        #   _save_if_training(agent, summary_writer)
+        if current_epoch % args.save_iters == 0:
+           agent.save_checkpoint(current_epoch) 
         result = runner.run_batch(train_summary=True)
         # agent.log(summary_writer, i)
-        i += 1
+        current_epoch += 1
     except KeyboardInterrupt:
         pass
 
-    # _save_if_training(agent, summary_writer)
-
     envs.close()
     print('mean score: %f' % runner.get_mean_score())
-
 
 if __name__ == "__main__":
     main()
