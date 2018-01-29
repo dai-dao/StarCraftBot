@@ -8,7 +8,10 @@ Entire backend is in Pytorch, with TF for tensorboard.
 
 ## To run training:
 ```bash
-python run.py --envs 32 --map MoveToBeacon
+# Overwrite existing model
+python run.py --experiment_id my_experiment --envs 32 --map MoveToBeacon --overwrite
+# Load existing model
+python run.py --experiment_id my_experiment --envs 32 --map MoveToBeacon
 ```
 
 
