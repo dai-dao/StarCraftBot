@@ -16,9 +16,9 @@ python run.py --experiment_id my_experiment --envs 32 --map MoveToBeacon
 
 
 ## Result:
-MoveToBeacon           |  CollectMineralShards
-:-------------------------:|:-------------------------:
-![](imgs/result_MoveToBeacon.png)  |  ![](imgs/result_CollectMineralShards.png)
+MoveToBeacon           |  CollectMineralShards | FindAndDefeatZerglings
+:-------------------------:|:-------------------------:|:-------------------------:
+![](imgs/result_MoveToBeacon.png)  |  ![](imgs/result_CollectMineralShards.png) | ![](imgs/result_FindAndDefeatZerglings.png)
 
 
 ## TODO:

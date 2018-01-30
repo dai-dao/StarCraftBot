@@ -8,5 +8,5 @@ __pycache__
 */.ipynb_checkpoints
 log
 replays
-out/models/*
-out/summary/*
+out
+results
