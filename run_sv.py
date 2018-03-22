@@ -38,6 +38,8 @@ parser.add_argument('--cuda', type=bool, default=torch.cuda.is_available(),
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='learning rate')
 # Training
+parser.add_argument('--data_dir', type=int, default=64,
+                    help='batch size')
 parser.add_argument('--batch_size', type=int, default=64,
                     help='batch size')
 # Bookeeping
@@ -70,9 +72,8 @@ def main():
     optimizer = optim.Adam(network.get_trainable_params())
     cross_ent = torch.nn.CrossEntropyLoss()
     # Process data files
-    PATH = 'data'
-    files = os.listdir(PATH)
-    unique = set([os.path.join(PATH, f[:-5]) for f in files])
+    files = os.listdir(args.data_dir)
+    unique = set([os.path.join(args.data_dir, f[:-5]) for f in files])
     pairs = [(u+'S.npz', u+'G.npz') for u in unique]
     # Training loop
     for index, pair in enumerate(pairs):
