@@ -70,7 +70,7 @@ def main():
     optimizer = optim.Adam(network.get_trainable_params())
     cross_ent = torch.nn.CrossEntropyLoss()
     # Process data files
-    PATH = '../data/Terran'
+    PATH = 'data'
     files = os.listdir(PATH)
     unique = set([os.path.join(PATH, f[:-5]) for f in files])
     pairs = [(u+'S.npz', u+'G.npz') for u in unique]
@@ -83,7 +83,6 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
         if index % 500 == 0:
             print('At pair', index)
             print('Loss is', loss.cpu().data.numpy()[0])
