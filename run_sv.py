@@ -86,6 +86,7 @@ def main():
         if index % 500 == 0:
             print('At pair', index)
             print('Loss is', loss.cpu().data.numpy()[0])
+            save_checkpoint(pair, network, optimizer)
 
 
 if __name__ == "__main__":
