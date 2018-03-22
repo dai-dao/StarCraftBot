@@ -49,6 +49,8 @@ args = parser.parse_args()
 if not os.path.exists('out'):
     os.mkdir('out')
 model_dir = os.path.join('out', 'pre_trained')
+if not os.path.exists(model_dir):
+    os.mkdir(model_dir)
 
 
 def save_checkpoint(epoch_count, network, optimizer):
