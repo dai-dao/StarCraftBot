@@ -8,8 +8,8 @@ from pysc2.lib import features
 
 import numpy as np
 
-from rl.pre_processing import is_spatial_action, NUM_FUNCTIONS, FLAT_FEATURES
-
+from rl.pre_processing import is_spatial_action, NUM_FUNCTIONS
+from rl.pre_processing import screen_specs_sv, minimap_specs_sv, flat_specs_sv
 
 
 def make_one_hot_1d(labels, dtype, C=2):
@@ -55,12 +55,15 @@ class Flatten(nn.Module):
 
 
 class FullyConv(object):
-    def __init__(self, args):
+    def __init__(self, args, supervised=False):
         self.args = args
-        self.screen_specs = features.SCREEN_FEATURES
-        self.minimap_specs = features.MINIMAP_FEATURES
-        self.flat_specs = FLAT_FEATURES
-
+        if not supervised:
+            self.screen_specs = features.SCREEN_FEATURES
+            self.minimap_specs = features.MINIMAP_FEATURES
+        else:
+            self.screen_specs = screen_specs_sv
+            self.minimap_specs = minimap_specs_sv
+        self.flat_specs = flat_specs_sv
         self.dtype = torch.FloatTensor
         self.atype = torch.LongTensor
         if args.cuda:
@@ -72,17 +75,17 @@ class FullyConv(object):
         self.embed_flat = self._init_embed_obs(self.flat_specs, self._embed_flat)
 
         self.screen_out = nn.Sequential(
-                self._conv2d_init(35, 16, stride=1, kernel_size=5, padding=2),
+                self._conv2d_init(20, 8, stride=1, kernel_size=5, padding=2),
                 nn.ReLU(True),
-                self._conv2d_init(16, 32, stride=1, kernel_size=3, padding=1),
+                self._conv2d_init(8, 16, stride=1, kernel_size=3, padding=1),
                 nn.ReLU(True))
         self.minimap_out = nn.Sequential(
-                self._conv2d_init(12, 16, stride=1, kernel_size=5, padding=2),
+                self._conv2d_init(6, 12, stride=1, kernel_size=5, padding=2),
                 nn.ReLU(True),
-                self._conv2d_init(16, 32, stride=1, kernel_size=3, padding=1),
+                self._conv2d_init(12, 16, stride=1, kernel_size=3, padding=1),
                 nn.ReLU(True))
         self.fc = nn.Sequential(
-                self._linear_init(78*32*32, 256),
+                self._linear_init(43*64*64, 256),
                 nn.ReLU(True))
         self.value = nn.Linear(in_features=256, out_features=1)
         self.fn_out = self._non_spatial_outputs(256, NUM_FUNCTIONS)
@@ -148,45 +151,6 @@ class FullyConv(object):
             # logger.scalar_summary(str(index), p.grad.data.mean(), i)
             print(str(index), p.grad.data.mean())
 
-    '''
-    def log_params(self, logger, i):
-        for k, v in self.embed_screen.items():
-            for name, param in v.named_parameters():
-                if param.requires_grad:
-                    logger.scalar_summary('embed_screen' + str(k) + '/' + name, param.data.mean(), i)
-        for k, v in self.embed_minimap.items():
-            for name, param in v.named_parameters():
-                if param.requires_grad:
-                    logger.scalar_summary('embed_minimap' + str(k) + '/' + name, param.data.mean(), i)
-        for k, v in self.embed_flat.items():
-            for name, param in v.named_parameters():
-                if param.requires_grad:
-                    logger.scalar_summary('embed_flat' + str(k) + '/' + name, param.data.mean(), i)
-        for k, v in self.spatial_outputs.items():
-            for name, param in v.named_parameters():
-                if param.requires_grad:
-                    logger.scalar_summary('spatial_outputs' + str(k) + '/' + '/' + name, param.data.mean(), i)
-        for k, v in self.non_spatial_outputs.items():
-            for name, param in v.named_parameters():
-                if param.requires_grad:
-                    logger.scalar_summary('non_spatial_outputs' + str(k) + '/' + name, param.data.mean(), i)
-        for name, param in self.screen_out.named_parameters():
-            if param.requires_grad:
-                logger.scalar_summary('screen_out/' + name, param.data.mean(), i)
-        for name, param in self.minimap_out.named_parameters():
-            if param.requires_grad:
-                logger.scalar_summary('minimap_out/' + name, param.data.mean(), i)
-        for name, param in self.fc.named_parameters():
-            if param.requires_grad:
-                logger.scalar_summary('fc/' + name, param.data.mean(), i)
-        for name, param in self.value.named_parameters():
-            if param.requires_grad:
-                logger.scalar_summary('value/' + name, param.data.mean(), i)
-        for name, param in self.fn_out.named_parameters():
-            if param.requires_grad:
-                logger.scalar_summary('fn_out/' + name, param.data.mean(), i)
-        '''
-
 
     def _init_non_spatial(self):
         out = {}
@@ -200,7 +164,7 @@ class FullyConv(object):
         out = {}
         for arg_type in actions.TYPES:
             if is_spatial_action[arg_type]:
-                out[arg_type.id] = self._spatial_outputs(78)
+                out[arg_type.id] = self._spatial_outputs(43)
         return out
 
 
@@ -266,7 +230,21 @@ class FullyConv(object):
         # Channel dimension is 1
         feats = torch.chunk(obs, len(spec), dim=1)
         out_list = []
-
+        for feat, s in zip(feats, spec):
+            if s.type == features.FeatureType.CATEGORICAL:
+                dims = np.round(np.log2(s.scale)).astype(np.int32).item()
+                dims = max(dims, 1)
+                indices = one_hot(feat, self.dtype, C=s.scale)
+                out = networks[s.index](indices.float())
+            elif s.type == features.FeatureType.SCALAR:
+                out = self._log_transform(feat, s.scale)
+            else:
+                raise NotImplementedError
+            out_list.append(out)
+        # Channel dimension is 1
+        return torch.cat(out_list, 1)    
+        
+        '''
         for s in spec:
             feat = feats[s.index]
             if s.type == features.FeatureType.CATEGORICAL:
@@ -281,6 +259,7 @@ class FullyConv(object):
             out_list.append(out)
         # Channel dimension is 1
         return torch.cat(out_list, 1)
+        '''
 
     
     def forward(self, screen_input, minimap_input, flat_input):
@@ -295,7 +274,7 @@ class FullyConv(object):
         broadcast_out = flat_emb.unsqueeze(2).unsqueeze(3). \
                         expand(flat_emb.size(0), flat_emb.size(1), resolution, resolution)
 
-        state_out = torch.cat([screen_out, minimap_out, broadcast_out], dim=1)
+        state_out = torch.cat([screen_out.float(), minimap_out.float(), broadcast_out.float()], dim=1)
         flat_out = state_out.view(state_out.size(0), -1)
         fc = self.fc(flat_out)
 

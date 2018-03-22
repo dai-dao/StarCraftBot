@@ -13,10 +13,12 @@ class Logger(object):
         """Create a summary writer logging to log_dir."""
         self.writer = tf.summary.FileWriter(log_dir)
 
+
     def scalar_summary(self, tag, value, step):
         """Log a scalar variable."""
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
         self.writer.add_summary(summary, step)
+
 
     def image_summary(self, tag, images, step):
         """Log a list of images."""
@@ -40,6 +42,7 @@ class Logger(object):
         # Create and write Summary
         summary = tf.Summary(value=img_summaries)
         self.writer.add_summary(summary, step)
+        
         
     def histo_summary(self, tag, values, step, bins=1000):
         """Log a histogram of the tensor of values."""

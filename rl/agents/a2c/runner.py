@@ -31,7 +31,7 @@ class A2CRunner():
     self.train = train
     self.n_steps = n_steps
     self.discount = discount
-    self.preproc = Preprocessor(self.envs.observation_spec()[0])
+    self.preproc = Preprocessor()
     self.episode_counter = 0
     self.cumulative_score = 0.0
 
