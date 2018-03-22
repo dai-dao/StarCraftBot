@@ -40,7 +40,7 @@ parser.add_argument('--lr', type=float, default=1e-3,
 # Training
 parser.add_argument('--data_dir', type=int, default=64,
                     help='batch size')
-parser.add_argument('--batch_size', type=int, default=64,
+parser.add_argument('--batch_size', type=str, required=True,
                     help='batch size')
 # Bookeeping
 args = parser.parse_args()
