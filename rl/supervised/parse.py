@@ -39,6 +39,12 @@ def renormalize_feats(feats):
 
 
 def dataIter(pair, args):
+    if args.cuda:
+        dtype = torch.cuda.FloatTensor
+        atype = torch.cuda.LongTensor
+    else:
+        dtype = torch.FloatTensor
+        atype = torch.LongTensor
     # S is spatial features
     S = np.asarray(sparse.load_npz(pair[0]).todense()).reshape([-1, 13, 64, 64])
     screen_features = S[:, 0:8, :, :]
@@ -58,14 +64,10 @@ def dataIter(pair, args):
     while cursor < n:
         batch = min(n - cursor, args.batch_size)
         out = {}
-        out['screen'] = torch.from_numpy(screen_features[cursor : cursor + batch])
-        out['minimap'] = torch.from_numpy(minimap_features[cursor : cursor + batch])
-        out['flat'] = torch.from_numpy(feats[cursor : cursor + batch])
-        action_var = torch.from_numpy(actions_taken[cursor : cursor + batch]).long()
-        if args.cuda:
-            action_var.cuda()
-            for k, v in out.items():
-                out[k].cuda()
+        out['screen'] = dtype(screen_features[cursor : cursor + batch])
+        out['minimap'] = dtype(minimap_features[cursor : cursor + batch])
+        out['flat'] = dtype(feats[cursor : cursor + batch])
+        action_var = atype(actions_taken[cursor : cursor + batch])
         for k, v in out.items():
             out[k] = Variable(v)
         action_var = Variable(action_var)
