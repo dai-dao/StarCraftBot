@@ -78,16 +78,16 @@ class FullyConv(object):
                 self._conv2d_init(20, 8, stride=1, kernel_size=5, padding=2),
                 nn.ReLU(True),
                 self._conv2d_init(8, 16, stride=1, kernel_size=3, padding=1),
-                nn.ReLU(True)), device_ids=[0, 1])
+                nn.ReLU(True)))
         self.minimap_out = nn.DataParallel(nn.Sequential(
                 self._conv2d_init(6, 12, stride=1, kernel_size=5, padding=2),
                 nn.ReLU(True),
                 self._conv2d_init(12, 16, stride=1, kernel_size=3, padding=1),
-                nn.ReLU(True)), device_ids=[0, 1])
+                nn.ReLU(True)))
         self.fc = nn.DataParallel(nn.Sequential(
                 self._linear_init(43*64*64, 256),
-                nn.ReLU(True)), device_ids=[0, 1])
-        self.value = nn.DataParallel(nn.Linear(in_features=256, out_features=1), device_ids=[0, 1])
+                nn.ReLU(True)))
+        self.value = nn.DataParallel(nn.Linear(in_features=256, out_features=1))
         self.fn_out = self._non_spatial_outputs(256, NUM_FUNCTIONS)
         self.non_spatial_outputs = self._init_non_spatial()
         self.spatial_outputs = self._init_spatial()
@@ -172,12 +172,12 @@ class FullyConv(object):
         return nn.DataParallel(nn.Sequential(
                     nn.Conv2d(in_channels=in_, out_channels=1, stride=1, kernel_size=1),
                     Flatten(),
-                    nn.Softmax(dim=1)), device_ids=[0, 1])
+                    nn.Softmax(dim=1)))
 
 
     def _non_spatial_outputs(self, in_, out_):
         return nn.DataParallel(nn.Sequential(nn.Linear(in_, out_),
-                               nn.Softmax(dim=1)), device_ids=[0, 1])
+                               nn.Softmax(dim=1)))
 
 
     def _conv2d_init(self, in_, out_, stride, kernel_size, padding):
@@ -185,14 +185,14 @@ class FullyConv(object):
         conv = nn.Conv2d(in_, out_, stride=stride, 
                                 kernel_size=kernel_size, padding=padding)
         conv.weight.data.mul_(relu_gain)
-        return nn.DataParallel(conv, device_ids=[0, 1])
+        return nn.DataParallel(conv)
 
 
     def _linear_init(self, in_, out_):
         relu_gain = nn.init.calculate_gain('relu')
         linear = nn.Linear(in_, out_)
         linear.weight.data.mul_(relu_gain)
-        return nn.DataParallel(linear, device_ids=[0, 1])
+        return nn.DataParallel(linear)
 
 
     def _init_embed_obs(self, spec, embed_fn):
@@ -207,7 +207,7 @@ class FullyConv(object):
                 dims = max(dims, 1)
                 sequence = nn.DataParallel(nn.Sequential(
                             embed_fn(s.scale, dims), 
-                            nn.ReLU(True)), device_ids=[0, 1])
+                            nn.ReLU(True)))
                 out_sequence[s.index] = sequence
         return out_sequence
 
