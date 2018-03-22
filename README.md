@@ -12,6 +12,8 @@ Entire backend is in Pytorch, with TF for tensorboard.
 python run.py --experiment_id my_experiment --envs 32 --map MoveToBeacon --overwrite
 # Load existing model
 python run.py --experiment_id my_experiment --envs 32 --map MoveToBeacon
+# With multiple GPUs
+CUDA_VISIBLE_DEVICES=1,2 python run_sv.py --data_dir data/
 ```
 
 
