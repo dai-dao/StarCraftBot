@@ -38,9 +38,9 @@ parser.add_argument('--cuda', type=bool, default=torch.cuda.is_available(),
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='learning rate')
 # Training
-parser.add_argument('--data_dir', type=int, default=64,
-                    help='batch size')
-parser.add_argument('--batch_size', type=str, required=True,
+parser.add_argument('--data_dir', type=str, required=True,
+                    help='data directory')
+parser.add_argument('--batch_size', type=int, default=64,
                     help='batch size')
 # Bookeeping
 args = parser.parse_args()
