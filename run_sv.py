@@ -38,7 +38,7 @@ parser.add_argument('--cuda', type=bool, default=torch.cuda.is_available(),
 parser.add_argument('--lr', type=float, default=1e-3,
                     help='learning rate')
 # Training
-parser.add_argument('--batch_size', type=int, default=128,
+parser.add_argument('--batch_size', type=int, default=64,
                     help='batch size')
 # Bookeeping
 args = parser.parse_args()
@@ -70,7 +70,7 @@ def main():
     optimizer = optim.Adam(network.get_trainable_params())
     cross_ent = torch.nn.CrossEntropyLoss()
     # Process data files
-    PATH = 'data'
+    PATH = '../data/Terran'
     files = os.listdir(PATH)
     unique = set([os.path.join(PATH, f[:-5]) for f in files])
     pairs = [(u+'S.npz', u+'G.npz') for u in unique]
@@ -86,7 +86,7 @@ def main():
 
         if index % 500 == 0:
             print('At pair', index)
-            print('Loss is', loss.data.numpy())
+            print('Loss is', loss.cpu().data.numpy())
 
 
 if __name__ == "__main__":
