@@ -3,7 +3,6 @@ import os
 import shutil
 import sys
 import argparse
-from logger import Logger
 
 # Pytorch 
 import torch
@@ -80,7 +79,6 @@ def main():
         for batch_ob, batch_action in dataIter(pairs[0], args):
             policy, _ = network.forward(batch_ob['screen'], batch_ob['minimap'], batch_ob['flat'])
             fn_id = policy[0]
-            
             loss = cross_ent(fn_id, batch_action)
             optimizer.zero_grad()
             loss.backward()
@@ -89,7 +87,6 @@ def main():
         if index % 500 == 0:
             print('At pair', index)
             print('Loss is', loss.data.numpy())
-
 
 
 if __name__ == "__main__":

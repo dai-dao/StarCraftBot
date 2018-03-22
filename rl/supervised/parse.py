@@ -66,7 +66,7 @@ def dataIter(pair, args):
         if args.cuda:
             action_var.cuda()
             for k, v in out.items():
-                v.cuda()
+                out[k].cuda()
         yield out, action_var
         cursor += batch
 
