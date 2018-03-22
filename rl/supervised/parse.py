@@ -55,18 +55,20 @@ def dataIter(pair, args):
     n = screen_features.shape[0]
     cursor = 0
 
-
     while cursor < n:
         batch = min(n - cursor, args.batch_size)
         out = {}
-        out['screen'] = Variable(torch.from_numpy(screen_features[cursor : cursor + batch]))
-        out['minimap'] = Variable(torch.from_numpy(minimap_features[cursor : cursor + batch]))
-        out['flat'] = Variable(torch.from_numpy(feats[cursor : cursor + batch]))
-        action_var = Variable(torch.from_numpy(actions_taken[cursor : cursor + batch]).long())
+        out['screen'] = torch.from_numpy(screen_features[cursor : cursor + batch])
+        out['minimap'] = torch.from_numpy(minimap_features[cursor : cursor + batch])
+        out['flat'] = torch.from_numpy(feats[cursor : cursor + batch])
+        action_var = torch.from_numpy(actions_taken[cursor : cursor + batch]).long()
         if args.cuda:
             action_var.cuda()
             for k, v in out.items():
                 out[k].cuda()
+        for k, v in out.items():
+            out[k] = Variable(v)
+        action_var = Variable(action_var)
         yield out, action_var
         cursor += batch
 
