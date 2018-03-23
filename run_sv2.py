@@ -62,7 +62,7 @@ class BuildOrderGRU(torch.nn.Module):
 
 
 def train(model, env, args):
-    #################################### PLOT ###################################################
+    # Plot
     STEPS = 10
     LAMBDA = 0.99
     vis = visdom.Visdom(env=args.name+'[{}]'.format(args.phrase))
@@ -71,17 +71,15 @@ def train(model, env, args):
     acc = None
     win = vis.line(X=np.zeros(1), Y=np.zeros(1))
     loss_win = vis.line(X=np.zeros(1), Y=np.zeros(1))
-
-    #################################### TRAIN ######################################################
+    # Train definition
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-
     gpu_id = args.gpu_id
     with torch.cuda.device(gpu_id):
         model = model.cuda() if gpu_id >= 0 else model
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-
+    # Setup training loop
     epoch = 0
     save = args.save_intervel
     env_return = env.step(reward=False, action=True)
@@ -91,7 +89,7 @@ def train(model, env, args):
         states_S = torch.from_numpy(states_S).float()
         states_G = torch.from_numpy(states_G).float()
         actions_gt = torch.from_numpy(actions_gt).long().squeeze()
-        weight = torch.ones((env.n_actions,))
+        weight = torch.ones((env.n_actions, ))
         weight[-1] = 0.05
         if gpu_id >= 0:
             states_S = states_S.cuda()
@@ -99,6 +97,8 @@ def train(model, env, args):
             actions_gt = actions_gt.cuda()
             weight = weight.cuda()
 
+
+    '''
     while True:
         actions = model(Variable(states_S), Variable(states_G), require_init)
         action_loss = 0
@@ -178,6 +178,8 @@ def train(model, env, args):
         if env_return is None:
             env.close()
             break
+
+    '''
 
 def test(model, env, args):
     ######################### SAVE RESULT ############################
@@ -272,8 +274,7 @@ def main():
     # Checkpoint paths
     args.save_path = os.path.join('checkpoints', args.name)
     args.model_path = os.path.join(args.save_path, 'snapshots')
-
-
+    # Train
     if args.phrase == 'train':
         if not os.path.isdir(args.save_path):
             os.makedirs(args.save_path)
@@ -286,12 +287,9 @@ def main():
         env.init(os.path.join(args.replays_path, '{}.json'.format(args.phrase)),
                  args.root, args.race, args.enemy_race, n_steps = args.n_steps, seed = args.seed,
                  n_replays = args.n_replays, epochs = args.n_epoch)
-
-
-
-'''
         model = BuildOrderGRU(env.n_channels, env.n_features, env.n_actions)
         train(model, env, args)
+    # Val and test
     elif 'val' in args.phrase or 'test' in args.phrase:
         test_result_path = os.path.join(args.save_path, args.phrase)
         if not os.path.isdir(test_result_path):
@@ -316,7 +314,7 @@ def main():
                 show_test_result(args.name, args.phrase, result, title=len(paths)-1)
             else:
                 time.sleep(60)
-'''
-            
+
+
 if __name__ == '__main__':
     main()
