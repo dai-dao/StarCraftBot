@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from rl.supervised.sv_result import show_test_result
-from rl.supervised.dataloader.BatchEnv import BatchSpatialEnv
+from rl.supervised.dataloader import BatchSpatialEnv
 
 
 class BuildOrderGRU(torch.nn.Module):
