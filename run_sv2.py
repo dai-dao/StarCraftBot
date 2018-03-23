@@ -48,21 +48,18 @@ class BuildOrderGRU(torch.nn.Module):
             x_s = F.relu(self.conv1(state_S))
             x_s = F.relu(self.conv2(x_s))
             x_s = x_s.view(-1, 1152)
-
             x_g = F.relu(self.linear_g(state_G))
-
             x = torch.cat((x_s, x_g), 1)
             x = F.relu(self.linear(x))
-
             self.h = self.rnn(x, self.h)
-
             values.append(self.actor_linear(self.h))
-
         return values
+
 
     def detach(self):
         if self.h is not None:
             self.h.detach_()
+
 
 def train(model, env, args):
     #################################### PLOT ###################################################
@@ -233,11 +230,10 @@ def test(model, env, args):
         else:
             action_pre_per_replay[-1] = np.ravel(np.hstack(action_pre_per_replay[-1]))
             action_gt_per_replay[-1] = np.ravel(np.hstack(action_gt_per_replay[-1]))
-
             env.close()
             break
-
     return action_pre_per_replay, action_gt_per_replay
+
 
 def next_path(model_folder, paths):
     models = {int(os.path.basename(model).split('.')[0].split('_')[-1])
@@ -247,40 +243,36 @@ def next_path(model_folder, paths):
         return None
     models_not_process = sorted(models_not_process)
     paths.add(models_not_process[0])
-
     return os.path.join(model_folder, 'model_iter_{}.pth'.format(models_not_process[0]))
 
+
 def main():
-    # Training settings
     parser = argparse.ArgumentParser(description='Global State Evaluation : StarCraft II')
+    # Training settings
     parser.add_argument('--name', type=str, default='StarCraft II:TvT[BuildOrder:Spatial]',
                         help='Experiment name. All outputs will be stored in checkpoints/[name]/')
-    parser.add_argument('--replays_path', default='train_val_test/Terran_vs_Terran',
+    parser.add_argument('--replays_path', default='/home/ddao/research/data/train_val_test/Terran_vs_Zerg/',
                         help='Path for training, validation and test set (default: train_val_test/Terran_vs_Terran)')
+    parser.add_argument('--root', default='/home/ddao/research/data/', help='Root for replays data')
     parser.add_argument('--race', default='Terran', help='Which race? (default: Terran)')
-    parser.add_argument('--enemy_race', default='Terran', help='Which the enemy race? (default: Terran)')
+    parser.add_argument('--enemy_race', default='Zerg', help='Which the enemy race? (default: Terran)')
     parser.add_argument('--phrase', type=str, default='train',
                         help='train|val|test (default: train)')
+    # Network settings
     parser.add_argument('--gpu_id', default=0, type=int, help='Which GPU to use [-1 indicate CPU] (default: 0)')
-
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate (default: 0.001)')
     parser.add_argument('--seed', type=int, default=1, help='Random seed (default: 1)')
-
+    # Training loop
     parser.add_argument('--n_steps', type=int, default=20, help='# of forward steps (default: 20)')
     parser.add_argument('--n_replays', type=int, default=32, help='# of replays (default: 32)')
     parser.add_argument('--n_epoch', type=int, default=10, help='# of epoches (default: 10)')
-
-    parser.add_argument('--save_intervel', type=int, default=1000000,
+    parser.add_argument('--save_interval', type=int, default=100000,
                         help='Frequency of model saving (default: 1000000)')
     args = parser.parse_args()
-
+    # Checkpoint paths
     args.save_path = os.path.join('checkpoints', args.name)
     args.model_path = os.path.join(args.save_path, 'snapshots')
 
-    print('------------ Options -------------')
-    for k, v in sorted(vars(args).items()):
-        print('{}: {}'.format(k, v))
-    print('-------------- End ----------------')
 
     if args.phrase == 'train':
         if not os.path.isdir(args.save_path):
@@ -289,11 +281,15 @@ def main():
             os.makedirs(args.model_path)
         with open(os.path.join(args.save_path, 'config'), 'w') as f:
             f.write(json.dumps(vars(args)))
-
+        # Init env
         env = BatchSpatialEnv()
         env.init(os.path.join(args.replays_path, '{}.json'.format(args.phrase)),
-                    './', args.race, args.enemy_race, n_steps=args.n_steps, seed=args.seed,
-                        n_replays=args.n_replays, epochs=args.n_epoch)
+                 args.root, args.race, args.enemy_race, n_steps = args.n_steps, seed = args.seed,
+                 n_replays = args.n_replays, epochs = args.n_epoch)
+
+
+
+'''
         model = BuildOrderGRU(env.n_channels, env.n_features, env.n_actions)
         train(model, env, args)
     elif 'val' in args.phrase or 'test' in args.phrase:
@@ -310,7 +306,7 @@ def main():
 
                 env = BatchSpatialEnv()
                 env.init(os.path.join(args.replays_path, dataset_path),
-                            './', args.race, args.enemy_race, n_steps=args.n_steps,
+                            args.root, args.race, args.enemy_race, n_steps=args.n_steps,
                                             seed=args.seed, n_replays=1, epochs=1)
                 model = BuildOrderGRU(env.n_channels, env.n_features, env.n_actions)
                 model.load_state_dict(torch.load(path))
@@ -320,6 +316,7 @@ def main():
                 show_test_result(args.name, args.phrase, result, title=len(paths)-1)
             else:
                 time.sleep(60)
-
+'''
+            
 if __name__ == '__main__':
     main()

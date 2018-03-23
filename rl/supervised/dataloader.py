@@ -224,7 +224,8 @@ class BatchSpatialEnv(BatchEnv):
 
 if __name__ == '__main__':
     env = BatchSpatialEnv()
-    env.init('../train_val_test/Terran_vs_Terran/train.json', '../', 'Terran', 'Terran')
+    env.init('/home/ddao/research/data/train_val_test/Terran_vs_Zerg/train.json', 
+             '/home/ddao/research/data/', 'Terran', 'Zerg')
     while True:
         r = env.step()
         if r is None:
