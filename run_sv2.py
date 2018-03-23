@@ -35,7 +35,7 @@ class BuildOrderGRU(torch.nn.Module):
         if self.h is None:
             self.h = Variable(states_S.data.new().resize_((batch, 128)).zero_())
         elif True in require_init:
-            h= self.h.data
+            h = self.h.data
             for idx, init in enumerate(require_init):
                 if init:
                     h[idx].zero_()
@@ -62,17 +62,6 @@ class BuildOrderGRU(torch.nn.Module):
 
 
 def train(model, env, args):
-    # Plot
-    '''
-    STEPS = 10
-    LAMBDA = 0.99
-    vis = visdom.Visdom(env=args.name+'[{}]'.format(args.phrase))
-    pre_per_replay = [[] for _ in range(args.n_replays)]
-    gt_per_replay = [[] for _ in range(args.n_replays)]
-    acc = None
-    win = vis.line(X=np.zeros(1), Y=np.zeros(1))
-    loss_win = vis.line(X=np.zeros(1), Y=np.zeros(1))
-    '''
     # Train definition
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -87,12 +76,7 @@ def train(model, env, args):
     env_return = env.step(reward=False, action=True)
     if env_return is not None:
         (states_S, states_G, actions_gt), require_init = env_return
-
-        print(states_G.shape)
-        print(states_S.shape)
-        print(actions_gt.shape)
-
-
+    # Cuda-ized
     with torch.cuda.device(gpu_id):
         states_S = torch.from_numpy(states_S).float()
         states_G = torch.from_numpy(states_G).float()
@@ -104,11 +88,8 @@ def train(model, env, args):
             states_G = states_G.cuda()
             actions_gt = actions_gt.cuda()
             weight = weight.cuda()
+            print('CUDA-ized')
 
-
-
-
-    '''
     while True:
         actions = model(Variable(states_S), Variable(states_G), require_init)
         action_loss = 0
@@ -126,52 +107,6 @@ def train(model, env, args):
             for p in optimizer.param_groups:
                 p['lr'] *= 0.5
 
-        ############################ PLOT ##########################################
-        vis.updateTrace(X=np.asarray([env.step_count()]),
-                        Y=np.asarray(action_loss.data.cpu().numpy()),
-                        win=loss_win,
-                        name='action')
-
-        actions_np = np.swapaxes(np.asarray([np.argmax(action.data.cpu().numpy(), axis=1) for action in actions]), 0, 1)
-        actions_gt_np = np.swapaxes(actions_gt.cpu().numpy(), 0, 1)
-
-        for idx, (action, action_gt, init) in enumerate(zip(actions_np, actions_gt_np, require_init)):
-            if init and len(pre_per_replay[idx]) > 0:
-                pre_per_replay[idx] = np.asarray(pre_per_replay[idx], dtype=np.uint8)
-                gt_per_replay[idx] = np.asarray(gt_per_replay[idx], dtype=np.uint8)
-
-                step = len(pre_per_replay[idx]) // STEPS
-                if step > 0:
-                    acc_tmp = []
-                    for s in range(STEPS):
-                        action_pre = pre_per_replay[idx][s*step:(s+1)*step]
-                        action_gt = gt_per_replay[idx][s*step:(s+1)*step]
-                        acc_tmp.append(np.mean(action_pre == action_gt))
-
-                    acc_tmp = np.asarray(acc_tmp)
-                    if acc is None:
-                        acc = acc_tmp
-                    else:
-                        acc = LAMBDA * acc + (1-LAMBDA) * acc_tmp
-
-                    if acc is None:
-                        continue
-                    for s in range(STEPS):
-                        vis.updateTrace(X=np.asarray([env.step_count()]),
-                                        Y=np.asarray([acc[s]]),
-                                        win=win,
-                                        name='{}[{}%~{}%]'.format('action', s*10, (s+1)*10))
-                    vis.updateTrace(X=np.asarray([env.step_count()]),
-                                    Y=np.asarray([np.mean(acc)]),
-                                    win=win,
-                                    name='action[TOTAL]')
-
-                pre_per_replay[idx] = []
-                gt_per_replay[idx] = []
-
-            pre_per_replay[idx].append(action[-1])
-            gt_per_replay[idx].append(action_gt[-1])
-
         ####################### NEXT BATCH ###################################
         env_return = env.step(reward=False, action=True)
         if env_return is not None:
@@ -179,9 +114,9 @@ def train(model, env, args):
             states_S = states_S.copy_(torch.from_numpy(raw_states_S).float())
             states_G = states_G.copy_(torch.from_numpy(raw_states_G).float())
             actions_gt = actions_gt.copy_(torch.from_numpy(raw_rewards).long().squeeze())
-
         if env.step_count() > save or env_return is None:
-            save = env.step_count()+args.save_interval
+            print('Saving model at step', env.step_count())
+            save = env.step_count() + args.save_interval
             torch.save(model.state_dict(),
                        os.path.join(args.model_path, 'model_iter_{}.pth'.format(env.step_count())))
             torch.save(model.state_dict(), os.path.join(args.model_path, 'model_latest.pth'))
@@ -189,7 +124,6 @@ def train(model, env, args):
             env.close()
             break
 
-    '''
 
 def test(model, env, args):
     ######################### SAVE RESULT ############################
