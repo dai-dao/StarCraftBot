@@ -163,7 +163,7 @@ class BatchGlobalFeatureEnv(BatchEnv):
 
 
 class BatchSpatialEnv(BatchEnv):
-    n_channels = 5
+    n_channels = 12
     n_features = 11
     n_actions_dic = {'Terran': 75, 'Protoss': 61, 'Zerg': 74}
     Feature = namedtuple('Feature', ['S', 'G'])
