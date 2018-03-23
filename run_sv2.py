@@ -63,6 +63,7 @@ class BuildOrderGRU(torch.nn.Module):
 
 def train(model, env, args):
     # Plot
+    '''
     STEPS = 10
     LAMBDA = 0.99
     vis = visdom.Visdom(env=args.name+'[{}]'.format(args.phrase))
@@ -71,6 +72,7 @@ def train(model, env, args):
     acc = None
     win = vis.line(X=np.zeros(1), Y=np.zeros(1))
     loss_win = vis.line(X=np.zeros(1), Y=np.zeros(1))
+    '''
     # Train definition
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
@@ -88,7 +90,7 @@ def train(model, env, args):
 
         print(states_G.shape)
         print(states_S.shape)
-        print(actions_gt.shape)
+        print(actions_gt)
 
 
     with torch.cuda.device(gpu_id):

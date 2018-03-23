@@ -212,7 +212,8 @@ class BatchSpatialEnv(BatchEnv):
         result = self.Feature(*zip(*[self.Feature(*zip(*result_per_step)) for result_per_step in result]))
         S = np.asarray(result.S)
         G = np.asarray(result.G)
-        result_return = [S[:, :, 8:13, :, :], G[:,:, :11]]
+        # Used to just use minimap features 8:13
+        result_return = [S[:, :, 0:12, :, :], G[:,:, :11]]
         if reward:
             result_return.append(G[:, :, 24:25])
         if action:
