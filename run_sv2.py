@@ -81,10 +81,16 @@ def train(model, env, args):
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # Setup training loop
     epoch = 0
-    save = args.save_intervel
+    save = args.save_interval
     env_return = env.step(reward=False, action=True)
     if env_return is not None:
         (states_S, states_G, actions_gt), require_init = env_return
+
+        print(states_G.shape)
+        print(states_S.shape)
+        print(actions_gt.shape)
+
+
     with torch.cuda.device(gpu_id):
         states_S = torch.from_numpy(states_S).float()
         states_G = torch.from_numpy(states_G).float()
@@ -96,6 +102,8 @@ def train(model, env, args):
             states_G = states_G.cuda()
             actions_gt = actions_gt.cuda()
             weight = weight.cuda()
+
+
 
 
     '''
@@ -171,7 +179,7 @@ def train(model, env, args):
             actions_gt = actions_gt.copy_(torch.from_numpy(raw_rewards).long().squeeze())
 
         if env.step_count() > save or env_return is None:
-            save = env.step_count()+args.save_intervel
+            save = env.step_count()+args.save_interval
             torch.save(model.state_dict(),
                        os.path.join(args.model_path, 'model_iter_{}.pth'.format(env.step_count())))
             torch.save(model.state_dict(), os.path.join(args.model_path, 'model_latest.pth'))
