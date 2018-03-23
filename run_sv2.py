@@ -90,7 +90,7 @@ def train(model, env, args):
 
         print(states_G.shape)
         print(states_S.shape)
-        print(actions_gt)
+        print(actions_gt.shape)
 
 
     with torch.cuda.device(gpu_id):
